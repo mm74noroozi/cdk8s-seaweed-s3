@@ -1,0 +1,202 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage1-filerdb-deployment-c8218213
+  namespace: storage1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: filerdb
+  template:
+    metadata:
+      labels:
+        app: filerdb
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_USER
+              value: weed
+            - name: POSTGRES_PASSWORD
+              value: No1QLNwxB08q
+            - name: POSTGRES_DB
+              value: filerdb
+          image: hub.hamdocker.ir/library/postgres:16
+          name: postgres
+          ports:
+            - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage1-filerdb-service-c818ea83
+  namespace: storage1
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: filerdb
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage1-filer-config-c8c8c1f0
+  namespace: storage1
+binaryData:
+  filer.toml: |
+    [postgres2]
+    enabled = true
+    createTable = """
+      CREATE TABLE IF NOT EXISTS "%s" (
+        dirhash   BIGINT,
+        name      VARCHAR(65535),
+        directory VARCHAR(65535),
+        meta      bytea,
+        PRIMARY KEY (dirhash, name)
+      );
+    """
+    hostname = "filerdb"
+    port = 5432
+    username = "example"
+    password = "example"
+    database = "filerdb"        # create or use an existing database
+    schema = ""
+    sslmode = "disable"
+    connection_max_idle = 100
+    connection_max_open = 100
+    connection_max_lifetime_seconds = 0
+    # if insert/upsert failing, you can disable upsert or update query syntax to match your RDBMS syntax:
+    enableUpsert = false
+    upsertQuery = """UPSERT INTO "%[1]s" (dirhash,name,directory,meta) VALUES($1,$2,$3,$4)"""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage1-filer-c897080c
+  namespace: storage1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: filer
+  template:
+    metadata:
+      labels:
+        app: filer
+    spec:
+      containers:
+        - command:
+            - filer
+            - -master="master-service:9333"
+            - -ip.bind=0.0.0.0
+            - -metricsPort=9326
+            - -s3
+          image: hub.hamdocker.ir/chrislusf/seaweedfs:3.61
+          name: filer
+          ports:
+            - containerPort: 9324
+              name: filer
+            - containerPort: 9333
+              name: metrics
+          volumeMounts:
+            - mountPath: /etc/seaweedfs
+              name: filer-config
+      volumes:
+        - name: filer-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage1-filer-service-c84a1880
+  namespace: storage1
+spec:
+  ports:
+    - port: 9324
+    - port: 9333
+  selector:
+    app: filer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage1-master-c83fdaa5
+  namespace: storage1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: master
+  template:
+    metadata:
+      labels:
+        app: master
+    spec:
+      containers:
+        - command:
+            - master
+            - -ip=master
+            - -ip.bind=0.0.0.0
+            - -metricsPort=9324
+            - -volumeSizeLimitMB=1000
+            - -defaultReplication=002
+          image: hub.hamdocker.ir/chrislusf/seaweedfs:3.61
+          name: master
+          ports:
+            - containerPort: 9333
+              name: master
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage1-master-service-c88dfcb5
+  namespace: storage1
+spec:
+  ports:
+    - port: 9333
+  selector:
+    app: master
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: storage1-volume-c831b98d
+  namespace: storage1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: volume
+  serviceName: volume-service
+  template:
+    metadata:
+      labels:
+        app: volume
+    spec:
+      containers:
+        - command:
+            - volume
+            - -mserver=master:9333
+            - -ip.bind=0.0.0.0
+            - -port=8080
+            - -metricsPort=9325
+            - -dir=/data
+          image: hub.hamdocker.ir/chrislusf/seaweedfs:3.61
+          name: volume
+          volumeMounts:
+            - mountPath: /data
+              name: volume
+  volumeClaimTemplates:
+    - metadata:
+        name: volume
+        namespace: storage1
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1GB
