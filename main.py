@@ -77,7 +77,7 @@ class MyChart(Chart):
                                    k8s.Container(
                                        name="master",
                                        image="hub.hamdocker.ir/chrislusf/seaweedfs:3.61", 
-                                       command=["master", "-ip=master", "-ip.bind=0.0.0.0", "-metricsPort=9324", "-volumeSizeLimitMB=1000", f"-defaultReplication=00{replica_count}", ],
+                                       command=["master", "-ip=master", "-ip.bind=0.0.0.0", "-metricsPort=9324", "-volumeSizeLimitMB=10", f"-defaultReplication=00{replica_count}", ],
                                        ports=[k8s.ContainerPort(container_port=9333, name="master")],
                                    )],
                                )
@@ -101,7 +101,7 @@ class MyChart(Chart):
                                       k8s.Container(
                                         name="volume",
                                         image="hub.hamdocker.ir/chrislusf/seaweedfs:3.61", 
-                                        command=["volume", "-mserver=master:9333", "-ip.bind=0.0.0.0", "-port=8080", "-metricsPort=9325", "-dir=/data"],
+                                        command=["volume", "-mserver=master-service:9333", "-ip.bind=0.0.0.0", "-port=8080", "-metricsPort=9325", "-dir=/data"],
                                         volume_mounts=[k8s.VolumeMount(name="volume", mount_path="/data")],
                                       )]
                                  )
