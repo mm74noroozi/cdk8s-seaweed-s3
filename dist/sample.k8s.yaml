@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: storage1
+  name: sample
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: storage1-filerdb-deployment-c8218213
-  namespace: storage1
+  name: filerdb-deployment
+  namespace: sample
 spec:
   replicas: 1
   selector:
@@ -34,8 +34,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: storage1-filerdb-service-c818ea83
-  namespace: storage1
+  name: filerdb-service
+  namespace: sample
 spec:
   ports:
     - port: 5432
@@ -45,40 +45,16 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: storage1-filer-config-c8c8c1f0
-  namespace: storage1
+  name: sample-filer-config-c8a33eb1
+  namespace: sample
 binaryData:
-  filer.toml: |
-    [postgres2]
-    enabled = true
-    createTable = """
-      CREATE TABLE IF NOT EXISTS "%s" (
-        dirhash   BIGINT,
-        name      VARCHAR(65535),
-        directory VARCHAR(65535),
-        meta      bytea,
-        PRIMARY KEY (dirhash, name)
-      );
-    """
-    hostname = "filerdb"
-    port = 5432
-    username = "example"
-    password = "example"
-    database = "filerdb-service"        # create or use an existing database
-    schema = ""
-    sslmode = "disable"
-    connection_max_idle = 100
-    connection_max_open = 100
-    connection_max_lifetime_seconds = 0
-    # if insert/upsert failing, you can disable upsert or update query syntax to match your RDBMS syntax:
-    enableUpsert = false
-    upsertQuery = """UPSERT INTO "%[1]s" (dirhash,name,directory,meta) VALUES($1,$2,$3,$4)"""
+  filer.toml: W3Bvc3RncmVzMl0NCmVuYWJsZWQgPSB0cnVlDQpjcmVhdGVUYWJsZSA9ICIiIg0KICBDUkVBVEUgVEFCTEUgSUYgTk9UIEVYSVNUUyAiJXMiICgNCiAgICBkaXJoYXNoICAgQklHSU5ULA0KICAgIG5hbWUgICAgICBWQVJDSEFSKDY1NTM1KSwNCiAgICBkaXJlY3RvcnkgVkFSQ0hBUig2NTUzNSksDQogICAgbWV0YSAgICAgIGJ5dGVhLA0KICAgIFBSSU1BUlkgS0VZIChkaXJoYXNoLCBuYW1lKQ0KICApOw0KIiIiDQpob3N0bmFtZSA9ICJmaWxlcmRiIg0KcG9ydCA9IDU0MzINCnVzZXJuYW1lID0gImV4YW1wbGUiDQpwYXNzd29yZCA9ICJleGFtcGxlIg0KZGF0YWJhc2UgPSAiZmlsZXJkYi1zZXJ2aWNlIiAgICAgICAgIyBjcmVhdGUgb3IgdXNlIGFuIGV4aXN0aW5nIGRhdGFiYXNlDQpzY2hlbWEgPSAiIg0Kc3NsbW9kZSA9ICJkaXNhYmxlIg0KY29ubmVjdGlvbl9tYXhfaWRsZSA9IDEwMA0KY29ubmVjdGlvbl9tYXhfb3BlbiA9IDEwMA0KY29ubmVjdGlvbl9tYXhfbGlmZXRpbWVfc2Vjb25kcyA9IDANCiMgaWYgaW5zZXJ0L3Vwc2VydCBmYWlsaW5nLCB5b3UgY2FuIGRpc2FibGUgdXBzZXJ0IG9yIHVwZGF0ZSBxdWVyeSBzeW50YXggdG8gbWF0Y2ggeW91ciBSREJNUyBzeW50YXg6DQplbmFibGVVcHNlcnQgPSBmYWxzZQ0KdXBzZXJ0UXVlcnkgPSAiIiJVUFNFUlQgSU5UTyAiJVsxXXMiIChkaXJoYXNoLG5hbWUsZGlyZWN0b3J5LG1ldGEpIFZBTFVFUygkMSwkMiwkMywkNCkiIiINCg==
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: storage1-filer-c897080c
-  namespace: storage1
+  name: filer-deployment
+  namespace: sample
 spec:
   replicas: 1
   selector:
@@ -112,20 +88,22 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: storage1-filer-service-c84a1880
-  namespace: storage1
+  name: filer-service
+  namespace: sample
 spec:
   ports:
-    - port: 9324
-    - port: 9333
+    - name: metrics
+      port: 9324
+    - name: filer
+      port: 9333
   selector:
     app: filer
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: storage1-master-c83fdaa5
-  namespace: storage1
+  name: master-deployment
+  namespace: sample
 spec:
   replicas: 1
   selector:
@@ -143,7 +121,7 @@ spec:
             - -ip.bind=0.0.0.0
             - -metricsPort=9324
             - -volumeSizeLimitMB=10
-            - -defaultReplication=002
+            - -defaultReplication=001
           image: hub.hamdocker.ir/chrislusf/seaweedfs:3.61
           name: master
           ports:
@@ -153,8 +131,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: storage1-master-service-c88dfcb5
-  namespace: storage1
+  name: master-service
+  namespace: sample
 spec:
   ports:
     - port: 9333
@@ -164,10 +142,10 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: storage1-volume-c831b98d
-  namespace: storage1
+  name: volume-deployment
+  namespace: sample
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: volume
@@ -193,10 +171,10 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: volume
-        namespace: storage1
+        namespace: sample
       spec:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 1GB
+            storage: 1Gi

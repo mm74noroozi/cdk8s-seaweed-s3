@@ -2,14 +2,14 @@
 from constructs import Construct
 from cdk8s import App, Chart 
 from imports import k8s
-
+import base64
 
 class MyChart(Chart):
    def __init__(self, scope: Construct, ns: str, replica_count: int):
         super().__init__(scope, ns)
         k8s.KubeNamespace(self, "ns", metadata=k8s.ObjectMeta(name=ns))
-        k8s.KubeDeployment(self, "filerdb-deployment",
-                           metadata=k8s.ObjectMeta(namespace=ns),
+        k8s.KubeDeployment(self, "filerdb",
+                           metadata=k8s.ObjectMeta(name="filerdb-deployment", namespace=ns),
                            spec=k8s.DeploymentSpec(
                                 replicas=1,
                                 selector=k8s.LabelSelector(match_labels={"app": "filerdb"}),
@@ -30,17 +30,19 @@ class MyChart(Chart):
                            )
                        )
                    )
-        k8s.KubeService(self, "filerdb-service",metadata=k8s.ObjectMeta(namespace=ns),
+        k8s.KubeService(self, "filerdb-service",
+                        metadata=k8s.ObjectMeta(name="filerdb-service", namespace=ns),
                         spec=k8s.ServiceSpec(
                             ports=[k8s.ServicePort(port=5432)],
                             selector={"app": "filerdb"}
                         )
                     )
-        with open("filer.toml", "r") as f:
-            config = f.read()
+        with open("filer.toml", "rb") as f:
+            config = base64.b64encode(f.read()).decode()
         k8s.KubeConfigMap(self, "filer-config", metadata=k8s.ObjectMeta(namespace=ns),
                           binary_data={"filer.toml": config})
-        k8s.KubeDeployment(self, "filer",metadata=k8s.ObjectMeta(namespace=ns),
+        k8s.KubeDeployment(self, "filer",
+                           metadata=k8s.ObjectMeta(name="filer-deployment", namespace=ns),
                        spec=k8s.DeploymentSpec(
                            replicas=1,
                            selector=k8s.LabelSelector(match_labels={"app": "filer"}),
@@ -60,14 +62,16 @@ class MyChart(Chart):
                            )
                        )
                     )
-        k8s.KubeService(self, "filer-service",metadata=k8s.ObjectMeta(namespace=ns),
+        k8s.KubeService(self, "filer-service",
+                        metadata=k8s.ObjectMeta(name="filer-service", namespace=ns),
                         spec=k8s.ServiceSpec(
-                            ports=[k8s.ServicePort(port=9324),
-                                   k8s.ServicePort(port=9333)],
+                            ports=[k8s.ServicePort(port=9324, name="metrics"),
+                                   k8s.ServicePort(port=9333, name="filer")],
                             selector={"app": "filer"}
                         )
                     )
-        k8s.KubeDeployment(self, "master",metadata=k8s.ObjectMeta(namespace=ns),
+        k8s.KubeDeployment(self, "master",
+                           metadata=k8s.ObjectMeta(name="master-deployment", namespace=ns),
                        spec=k8s.DeploymentSpec(
                            replicas=1,
                            selector=k8s.LabelSelector(match_labels={"app": "master"}),
@@ -84,13 +88,15 @@ class MyChart(Chart):
                            )
                        )
             )
-        k8s.KubeService(self, "master-service", metadata=k8s.ObjectMeta(namespace=ns),
+        k8s.KubeService(self, "master-service", 
+                        metadata=k8s.ObjectMeta(name="master-service",namespace=ns),
                         spec=k8s.ServiceSpec(
                             ports=[k8s.ServicePort(port=9333)],
                             selector={"app": "master"}
                         )
                     )
-        k8s.KubeStatefulSet(self, "volume",metadata=k8s.ObjectMeta(namespace=ns),  
+        k8s.KubeStatefulSet(self, "volume",
+                            metadata=k8s.ObjectMeta(name="volume-deployment", namespace=ns),  
                           spec=k8s.StatefulSetSpec(
                             replicas=replica_count,
                             service_name="volume-service",
@@ -110,13 +116,8 @@ class MyChart(Chart):
                                 metadata=k8s.ObjectMeta(name="volume", namespace=ns),
                                 spec=k8s.PersistentVolumeClaimSpec(
                                     access_modes=["ReadWriteOnce"],
-                                    resources=k8s.ResourceRequirements(requests={"storage": k8s.Quantity.from_string(value="1GB")})
+                                    resources=k8s.ResourceRequirements(requests={"storage": k8s.Quantity.from_string(value="1Gi")})
                                 )
                             )]
                         )
                     )
-        
-app = App()
-MyChart(app, ns="storage1", replica_count=2)
-
-app.synth()
