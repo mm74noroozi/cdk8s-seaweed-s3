@@ -64,7 +64,7 @@ binaryData:
     port = 5432
     username = "example"
     password = "example"
-    database = "filerdb"        # create or use an existing database
+    database = "filerdb-service"        # create or use an existing database
     schema = ""
     sslmode = "disable"
     connection_max_idle = 100
@@ -142,7 +142,7 @@ spec:
             - -ip=master
             - -ip.bind=0.0.0.0
             - -metricsPort=9324
-            - -volumeSizeLimitMB=1000
+            - -volumeSizeLimitMB=10
             - -defaultReplication=002
           image: hub.hamdocker.ir/chrislusf/seaweedfs:3.61
           name: master
@@ -180,7 +180,7 @@ spec:
       containers:
         - command:
             - volume
-            - -mserver=master:9333
+            - -mserver=master-service:9333
             - -ip.bind=0.0.0.0
             - -port=8080
             - -metricsPort=9325
