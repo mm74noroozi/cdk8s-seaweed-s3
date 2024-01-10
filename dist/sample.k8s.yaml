@@ -45,10 +45,10 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sample-filer-config-c8a33eb1
+  name: filer-config
   namespace: sample
 binaryData:
-  filer.toml: W3Bvc3RncmVzMl0NCmVuYWJsZWQgPSB0cnVlDQpjcmVhdGVUYWJsZSA9ICIiIg0KICBDUkVBVEUgVEFCTEUgSUYgTk9UIEVYSVNUUyAiJXMiICgNCiAgICBkaXJoYXNoICAgQklHSU5ULA0KICAgIG5hbWUgICAgICBWQVJDSEFSKDY1NTM1KSwNCiAgICBkaXJlY3RvcnkgVkFSQ0hBUig2NTUzNSksDQogICAgbWV0YSAgICAgIGJ5dGVhLA0KICAgIFBSSU1BUlkgS0VZIChkaXJoYXNoLCBuYW1lKQ0KICApOw0KIiIiDQpob3N0bmFtZSA9ICJmaWxlcmRiIg0KcG9ydCA9IDU0MzINCnVzZXJuYW1lID0gImV4YW1wbGUiDQpwYXNzd29yZCA9ICJleGFtcGxlIg0KZGF0YWJhc2UgPSAiZmlsZXJkYi1zZXJ2aWNlIiAgICAgICAgIyBjcmVhdGUgb3IgdXNlIGFuIGV4aXN0aW5nIGRhdGFiYXNlDQpzY2hlbWEgPSAiIg0Kc3NsbW9kZSA9ICJkaXNhYmxlIg0KY29ubmVjdGlvbl9tYXhfaWRsZSA9IDEwMA0KY29ubmVjdGlvbl9tYXhfb3BlbiA9IDEwMA0KY29ubmVjdGlvbl9tYXhfbGlmZXRpbWVfc2Vjb25kcyA9IDANCiMgaWYgaW5zZXJ0L3Vwc2VydCBmYWlsaW5nLCB5b3UgY2FuIGRpc2FibGUgdXBzZXJ0IG9yIHVwZGF0ZSBxdWVyeSBzeW50YXggdG8gbWF0Y2ggeW91ciBSREJNUyBzeW50YXg6DQplbmFibGVVcHNlcnQgPSBmYWxzZQ0KdXBzZXJ0UXVlcnkgPSAiIiJVUFNFUlQgSU5UTyAiJVsxXXMiIChkaXJoYXNoLG5hbWUsZGlyZWN0b3J5LG1ldGEpIFZBTFVFUygkMSwkMiwkMywkNCkiIiINCg==
+  filer.toml: W3Bvc3RncmVzMl0NCmVuYWJsZWQgPSB0cnVlDQpjcmVhdGVUYWJsZSA9ICIiIg0KICBDUkVBVEUgVEFCTEUgSUYgTk9UIEVYSVNUUyAiJXMiICgNCiAgICBkaXJoYXNoICAgQklHSU5ULA0KICAgIG5hbWUgICAgICBWQVJDSEFSKDY1NTM1KSwNCiAgICBkaXJlY3RvcnkgVkFSQ0hBUig2NTUzNSksDQogICAgbWV0YSAgICAgIGJ5dGVhLA0KICAgIFBSSU1BUlkgS0VZIChkaXJoYXNoLCBuYW1lKQ0KICApOw0KIiIiDQpob3N0bmFtZSA9ICJmaWxlcmRiIg0KcG9ydCA9IDU0MzINCnVzZXJuYW1lID0gIndlZWQiDQpwYXNzd29yZCA9ICJObzFRTE53eEIwOHEiDQpkYXRhYmFzZSA9ICJmaWxlcmRiLXNlcnZpY2Uuc2FtcGxlLnN2Yy5jbHVzdGVyLmxvY2FsIiAgICAgICAgIyBjcmVhdGUgb3IgdXNlIGFuIGV4aXN0aW5nIGRhdGFiYXNlDQpzY2hlbWEgPSAiIg0Kc3NsbW9kZSA9ICJkaXNhYmxlIg0KY29ubmVjdGlvbl9tYXhfaWRsZSA9IDEwMA0KY29ubmVjdGlvbl9tYXhfb3BlbiA9IDEwMA0KY29ubmVjdGlvbl9tYXhfbGlmZXRpbWVfc2Vjb25kcyA9IDANCiMgaWYgaW5zZXJ0L3Vwc2VydCBmYWlsaW5nLCB5b3UgY2FuIGRpc2FibGUgdXBzZXJ0IG9yIHVwZGF0ZSBxdWVyeSBzeW50YXggdG8gbWF0Y2ggeW91ciBSREJNUyBzeW50YXg6DQplbmFibGVVcHNlcnQgPSBmYWxzZQ0KdXBzZXJ0UXVlcnkgPSAiIiJVUFNFUlQgSU5UTyAiJVsxXXMiIChkaXJoYXNoLG5hbWUsZGlyZWN0b3J5LG1ldGEpIFZBTFVFUygkMSwkMiwkMywkNCkiIiINCg==
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -67,18 +67,19 @@ spec:
     spec:
       containers:
         - command:
+            - weed
             - filer
-            - -master="master-service:9333"
+            - -master=master-service.sample.svc.cluster.local:9333
             - -ip.bind=0.0.0.0
             - -metricsPort=9326
             - -s3
           image: hub.hamdocker.ir/chrislusf/seaweedfs:3.61
           name: filer
           ports:
-            - containerPort: 9324
-              name: filer
-            - containerPort: 9333
+            - containerPort: 9326
               name: metrics
+            - containerPort: 8333
+              name: s3
           volumeMounts:
             - mountPath: /etc/seaweedfs
               name: filer-config
@@ -93,9 +94,9 @@ metadata:
 spec:
   ports:
     - name: metrics
-      port: 9324
-    - name: filer
-      port: 9333
+      port: 9326
+    - name: s3
+      port: 8333
   selector:
     app: filer
 ---
@@ -116,6 +117,7 @@ spec:
     spec:
       containers:
         - command:
+            - weed
             - master
             - -ip=master
             - -ip.bind=0.0.0.0
@@ -127,6 +129,10 @@ spec:
           ports:
             - containerPort: 9333
               name: master
+            - containerPort: 19333
+              name: volume
+            - containerPort: 9324
+              name: metrics
 ---
 apiVersion: v1
 kind: Service
@@ -135,7 +141,12 @@ metadata:
   namespace: sample
 spec:
   ports:
-    - port: 9333
+    - name: master
+      port: 9333
+    - name: volume
+      port: 19333
+    - name: metrics
+      port: 9324
   selector:
     app: master
 ---
@@ -157,8 +168,9 @@ spec:
     spec:
       containers:
         - command:
+            - weed
             - volume
-            - -mserver=master-service:9333
+            - -mserver=master-service.sample.svc.cluster.local:9333
             - -ip.bind=0.0.0.0
             - -port=8080
             - -metricsPort=9325
