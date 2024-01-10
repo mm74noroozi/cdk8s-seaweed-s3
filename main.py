@@ -39,7 +39,8 @@ class MyChart(Chart):
                     )
         with open("filer.toml", "rb") as f:
             config = base64.b64encode(f.read()).decode()
-        k8s.KubeConfigMap(self, "filer-config", metadata=k8s.ObjectMeta(namespace=ns),
+        k8s.KubeConfigMap(self, "filer-config", 
+                          metadata=k8s.ObjectMeta(name="filer-config", namespace=ns),
                           binary_data={"filer.toml": config})
         k8s.KubeDeployment(self, "filer",
                            metadata=k8s.ObjectMeta(name="filer-deployment", namespace=ns),
@@ -52,8 +53,8 @@ class MyChart(Chart):
                                    k8s.Container(
                                        name="filer",
                                        image="hub.hamdocker.ir/chrislusf/seaweedfs:3.61", 
-                                       command=['filer', '-master="master-service:9333"','-ip.bind=0.0.0.0','-metricsPort=9326','-s3'],
-                                       ports=[k8s.ContainerPort(container_port=9324, name="filer"),
+                                       command=["weed", 'filer', f'-master="master-service.{ns}.svc.cluster.local:9333"','-ip.bind=0.0.0.0','-metricsPort=9326','-s3'],
+                                       ports=[k8s.ContainerPort(container_port=9326, name="filer"),
                                               k8s.ContainerPort(container_port=9333, name="metrics")],
                                        volume_mounts=[k8s.VolumeMount(mount_path="/etc/seaweedfs", name="filer-config")],
                                    )],
@@ -65,7 +66,7 @@ class MyChart(Chart):
         k8s.KubeService(self, "filer-service",
                         metadata=k8s.ObjectMeta(name="filer-service", namespace=ns),
                         spec=k8s.ServiceSpec(
-                            ports=[k8s.ServicePort(port=9324, name="metrics"),
+                            ports=[k8s.ServicePort(port=9326, name="metrics"),
                                    k8s.ServicePort(port=9333, name="filer")],
                             selector={"app": "filer"}
                         )
@@ -81,8 +82,9 @@ class MyChart(Chart):
                                    k8s.Container(
                                        name="master",
                                        image="hub.hamdocker.ir/chrislusf/seaweedfs:3.61", 
-                                       command=["master", "-ip=master", "-ip.bind=0.0.0.0", "-metricsPort=9324", "-volumeSizeLimitMB=10", f"-defaultReplication=00{replica_count}", ],
-                                       ports=[k8s.ContainerPort(container_port=9333, name="master")],
+                                       command=["weed", "master", "-ip=master", "-ip.bind=0.0.0.0", "-metricsPort=9324", "-volumeSizeLimitMB=10", f"-defaultReplication=00{replica_count}", ],
+                                       ports=[k8s.ContainerPort(container_port=9333, name="master"),
+                                              k8s.ContainerPort(container_port=9324, name="metrics")],
                                    )],
                                )
                            )
@@ -91,7 +93,8 @@ class MyChart(Chart):
         k8s.KubeService(self, "master-service", 
                         metadata=k8s.ObjectMeta(name="master-service",namespace=ns),
                         spec=k8s.ServiceSpec(
-                            ports=[k8s.ServicePort(port=9333)],
+                            ports=[k8s.ServicePort(port=9333, name="master"),
+                                   k8s.ServicePort(port=9324, name="metrics")],
                             selector={"app": "master"}
                         )
                     )
@@ -107,7 +110,7 @@ class MyChart(Chart):
                                       k8s.Container(
                                         name="volume",
                                         image="hub.hamdocker.ir/chrislusf/seaweedfs:3.61", 
-                                        command=["volume", "-mserver=master-service:9333", "-ip.bind=0.0.0.0", "-port=8080", "-metricsPort=9325", "-dir=/data"],
+                                        command=["weed", "volume", f"-mserver=master-service.{ns}.svc.cluster.local:9333", "-ip.bind=0.0.0.0", "-port=8080", "-metricsPort=9325", "-dir=/data"],
                                         volume_mounts=[k8s.VolumeMount(name="volume", mount_path="/data")],
                                       )]
                                  )
