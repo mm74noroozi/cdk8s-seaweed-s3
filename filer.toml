@@ -11,9 +11,9 @@ createTable = """
 """
 hostname = "filerdb"
 port = 5432
-username = "example"
-password = "example"
-database = "filerdb-service"        # create or use an existing database
+username = "weed"
+password = "No1QLNwxB08q"
+database = "filerdb-service.sample.svc.cluster.local"        # create or use an existing database
 schema = ""
 sslmode = "disable"
 connection_max_idle = 100

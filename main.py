@@ -53,9 +53,9 @@ class MyChart(Chart):
                                    k8s.Container(
                                        name="filer",
                                        image="hub.hamdocker.ir/chrislusf/seaweedfs:3.61", 
-                                       command=["weed", 'filer', f'-master="master-service.{ns}.svc.cluster.local:9333"','-ip.bind=0.0.0.0','-metricsPort=9326','-s3'],
-                                       ports=[k8s.ContainerPort(container_port=9326, name="filer"),
-                                              k8s.ContainerPort(container_port=9333, name="metrics")],
+                                       command=["weed", 'filer', f'-master=master-service.{ns}.svc.cluster.local:9333','-ip.bind=0.0.0.0','-metricsPort=9326','-s3'],
+                                       ports=[k8s.ContainerPort(container_port=9326, name="metrics"),
+                                              k8s.ContainerPort(container_port=8333, name="s3")],
                                        volume_mounts=[k8s.VolumeMount(mount_path="/etc/seaweedfs", name="filer-config")],
                                    )],
                                 volumes=[k8s.Volume(name="filer-config")]
@@ -67,7 +67,7 @@ class MyChart(Chart):
                         metadata=k8s.ObjectMeta(name="filer-service", namespace=ns),
                         spec=k8s.ServiceSpec(
                             ports=[k8s.ServicePort(port=9326, name="metrics"),
-                                   k8s.ServicePort(port=9333, name="filer")],
+                                   k8s.ServicePort(port=8333, name="s3")],
                             selector={"app": "filer"}
                         )
                     )
@@ -84,6 +84,7 @@ class MyChart(Chart):
                                        image="hub.hamdocker.ir/chrislusf/seaweedfs:3.61", 
                                        command=["weed", "master", "-ip=master", "-ip.bind=0.0.0.0", "-metricsPort=9324", "-volumeSizeLimitMB=10", f"-defaultReplication=00{replica_count}", ],
                                        ports=[k8s.ContainerPort(container_port=9333, name="master"),
+                                              k8s.ContainerPort(container_port=19333, name="volume"),
                                               k8s.ContainerPort(container_port=9324, name="metrics")],
                                    )],
                                )
@@ -94,6 +95,7 @@ class MyChart(Chart):
                         metadata=k8s.ObjectMeta(name="master-service",namespace=ns),
                         spec=k8s.ServiceSpec(
                             ports=[k8s.ServicePort(port=9333, name="master"),
+                                   k8s.ServicePort(port=19333, name="volume"),
                                    k8s.ServicePort(port=9324, name="metrics")],
                             selector={"app": "master"}
                         )
