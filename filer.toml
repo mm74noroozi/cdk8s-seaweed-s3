@@ -1,6 +1,6 @@
 [postgres2]
 enabled = true
-createTable = """
+createTable = '''
   CREATE TABLE IF NOT EXISTS "%s" (
     dirhash   BIGINT,
     name      VARCHAR(65535),
@@ -8,12 +8,12 @@ createTable = """
     meta      bytea,
     PRIMARY KEY (dirhash, name)
   );
-"""
-hostname = "filerdb"
+'''
+hostname = "filerdb-service.sample.svc.cluster.local"
 port = 5432
 username = "weed"
 password = "No1QLNwxB08q"
-database = "filerdb-service.sample.svc.cluster.local"        # create or use an existing database
+database = "filerdb"        # create or use an existing database
 schema = ""
 sslmode = "disable"
 connection_max_idle = 100
@@ -21,4 +21,4 @@ connection_max_open = 100
 connection_max_lifetime_seconds = 0
 # if insert/upsert failing, you can disable upsert or update query syntax to match your RDBMS syntax:
 enableUpsert = false
-upsertQuery = """UPSERT INTO "%[1]s" (dirhash,name,directory,meta) VALUES($1,$2,$3,$4)"""
+upsertQuery = 'UPSERT INTO "%[1]s" (dirhash,name,directory,meta) VALUES($1,$2,$3,$4)'
