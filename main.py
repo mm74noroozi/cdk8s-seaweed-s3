@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+from typing import Any
 from constructs import Construct
-from cdk8s import App, Chart 
+from cdk8s import App, Chart
+import toml 
 from imports import k8s
 import base64
 
@@ -37,11 +39,12 @@ class MyChart(Chart):
                             selector={"app": "filerdb"}
                         )
                     )
-        with open("filer.toml", "rb") as f:
-            config = base64.b64encode(f.read()).decode()
+        with open("filer.toml", "r") as f:
+            config: dict[str, Any] = toml.load(f)
+            config["hostname"] = f"filerdb-service.{ns}.svc.cluster.local"
         k8s.KubeConfigMap(self, "filer-config", 
                           metadata=k8s.ObjectMeta(name="filer-config", namespace=ns),
-                          binary_data={"filer.toml": config})
+                          data={"filer.toml": toml.dumps(config)})
         k8s.KubeDeployment(self, "filer",
                            metadata=k8s.ObjectMeta(name="filer-deployment", namespace=ns),
                        spec=k8s.DeploymentSpec(
@@ -58,7 +61,7 @@ class MyChart(Chart):
                                               k8s.ContainerPort(container_port=8333, name="s3")],
                                        volume_mounts=[k8s.VolumeMount(mount_path="/etc/seaweedfs", name="filer-config")],
                                    )],
-                                volumes=[k8s.Volume(name="filer-config")]
+                                volumes=[k8s.Volume(name="filer-config", config_map=k8s.ConfigMapVolumeSource(name="filer-config"))]
                                )
                            )
                        )

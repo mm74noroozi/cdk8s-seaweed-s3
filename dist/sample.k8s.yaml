@@ -47,8 +47,25 @@ kind: ConfigMap
 metadata:
   name: filer-config
   namespace: sample
-binaryData:
-  filer.toml: W3Bvc3RncmVzMl0NCmVuYWJsZWQgPSB0cnVlDQpjcmVhdGVUYWJsZSA9ICIiIg0KICBDUkVBVEUgVEFCTEUgSUYgTk9UIEVYSVNUUyAiJXMiICgNCiAgICBkaXJoYXNoICAgQklHSU5ULA0KICAgIG5hbWUgICAgICBWQVJDSEFSKDY1NTM1KSwNCiAgICBkaXJlY3RvcnkgVkFSQ0hBUig2NTUzNSksDQogICAgbWV0YSAgICAgIGJ5dGVhLA0KICAgIFBSSU1BUlkgS0VZIChkaXJoYXNoLCBuYW1lKQ0KICApOw0KIiIiDQpob3N0bmFtZSA9ICJmaWxlcmRiIg0KcG9ydCA9IDU0MzINCnVzZXJuYW1lID0gIndlZWQiDQpwYXNzd29yZCA9ICJObzFRTE53eEIwOHEiDQpkYXRhYmFzZSA9ICJmaWxlcmRiLXNlcnZpY2Uuc2FtcGxlLnN2Yy5jbHVzdGVyLmxvY2FsIiAgICAgICAgIyBjcmVhdGUgb3IgdXNlIGFuIGV4aXN0aW5nIGRhdGFiYXNlDQpzY2hlbWEgPSAiIg0Kc3NsbW9kZSA9ICJkaXNhYmxlIg0KY29ubmVjdGlvbl9tYXhfaWRsZSA9IDEwMA0KY29ubmVjdGlvbl9tYXhfb3BlbiA9IDEwMA0KY29ubmVjdGlvbl9tYXhfbGlmZXRpbWVfc2Vjb25kcyA9IDANCiMgaWYgaW5zZXJ0L3Vwc2VydCBmYWlsaW5nLCB5b3UgY2FuIGRpc2FibGUgdXBzZXJ0IG9yIHVwZGF0ZSBxdWVyeSBzeW50YXggdG8gbWF0Y2ggeW91ciBSREJNUyBzeW50YXg6DQplbmFibGVVcHNlcnQgPSBmYWxzZQ0KdXBzZXJ0UXVlcnkgPSAiIiJVUFNFUlQgSU5UTyAiJVsxXXMiIChkaXJoYXNoLG5hbWUsZGlyZWN0b3J5LG1ldGEpIFZBTFVFUygkMSwkMiwkMywkNCkiIiINCg==
+data:
+  filer.toml: |
+    hostname = "filerdb-service.sample.svc.cluster.local"
+
+    [postgres2]
+    enabled = true
+    createTable = "  CREATE TABLE IF NOT EXISTS \"%s\" (\n    dirhash   BIGINT,\n    name      VARCHAR(65535),\n    directory VARCHAR(65535),\n    meta      bytea,\n    PRIMARY KEY (dirhash, name)\n  );\n"
+    hostname = "filerdb-service.sample.svc.cluster.local"
+    port = 5432
+    username = "weed"
+    password = "No1QLNwxB08q"
+    database = "filerdb"
+    schema = ""
+    sslmode = "disable"
+    connection_max_idle = 100
+    connection_max_open = 100
+    connection_max_lifetime_seconds = 0
+    enableUpsert = false
+    upsertQuery = "UPSERT INTO \"%[1]s\" (dirhash,name,directory,meta) VALUES($1,$2,$3,$4)"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -84,7 +101,9 @@ spec:
             - mountPath: /etc/seaweedfs
               name: filer-config
       volumes:
-        - name: filer-config
+        - configMap:
+            name: filer-config
+          name: filer-config
 ---
 apiVersion: v1
 kind: Service
