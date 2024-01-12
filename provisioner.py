@@ -24,10 +24,10 @@ def list():
 
 @app.get("/storage/{id}", description="list storages")
 def detail(id: str):
-    ns = v1.read_namespace(id)
-    if not ns:
+    ns_map ={ns.metadata.uid: ns.metadata.name for ns in v1.list_namespace() if "type" in ns.metadata.labels and ns.metadata.labels["type"] == "storage"} 
+    if id not in ns_map:
         return {"status": "not found"}
-    name = ns.metadata.name
+    name = ns_map[id]
     return name
 
 @app.post("/storage", description="create a storage")
@@ -44,6 +44,19 @@ def create_storage(name: str, replication: int = 1) -> dict[str, str]:
     app.synth()
     api = client.ApiClient()
     utils.create_from_yaml(api, yaml_file=f"dist/{name}.k8s.yaml")
+    return {"status": "ok"}
+
+@app.delete("/storage", description="delete a storage")
+def create_storage(id) -> dict[str, str]:
+    ns_map ={ns.metadata.uid: ns.metadata.name for ns in v1.list_namespace() if "type" in ns.metadata.labels and ns.metadata.labels["type"] == "storage"} 
+    if id not in ns_map:
+        return {"status": "not found"}
+    name = ns_map[id]
+    app = App()
+    MyChart(scope=app, ns=name, replica_count=1)
+    app.synth()
+    api = client.ApiClient()
+    utils.(api, yaml_file=f"dist/{name}.k8s.yaml")
     return {"status": "ok"}
 
 if __name__ == "__main__":

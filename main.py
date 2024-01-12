@@ -9,7 +9,7 @@ import base64
 class MyChart(Chart):
    def __init__(self, scope: Construct, ns: str, replica_count: int):
         super().__init__(scope, ns)
-        k8s.KubeNamespace(self, "ns", metadata=k8s.ObjectMeta(name=ns))
+        k8s.KubeNamespace(self, "ns", metadata=k8s.ObjectMeta(name=ns, labels={'type': 'storage'}))
         k8s.KubeDeployment(self, "filerdb",
                            metadata=k8s.ObjectMeta(name="filerdb-deployment", namespace=ns),
                            spec=k8s.DeploymentSpec(
