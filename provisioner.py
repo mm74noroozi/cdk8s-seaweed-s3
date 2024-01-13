@@ -5,6 +5,7 @@ from kubernetes import client, config, utils
 from main import MyChart
 import uvicorn
 from cdk8s import App
+import os
 
 app = FastAPI()
 
@@ -28,7 +29,16 @@ def detail(id: str):
     if id not in ns_map:
         return {"status": "not found"}
     name = ns_map[id]
-    return name
+    s3 = Minio(endpoint=f"filer-service.{name}.svc.cluster.local:8333", 
+               access_key="blahblah...", secret_key="blahblah...",
+               secure=False)
+    res={}
+    res['name'] = name
+    res['buckets'] = []
+    for bucket in s3.list_buckets():
+        objects_number: int = len(list(s3.list_objects(bucket.name)))
+        res.append({"name": bucket.name, "num_objects": objects_number})
+    return res
 
 @app.post("/storage", description="create a storage")
 def create_storage(name: str, replication: int = 1) -> dict[str, str]:
@@ -37,13 +47,12 @@ def create_storage(name: str, replication: int = 1) -> dict[str, str]:
         return {"status": "replication must be greater than 0"}
     if replication > 9:
         return {"status": "replication must be less than 9"}
-    # if name in [ns.metadata.name for ns in v1.list_namespace().items]:
-    #     return {"status": "name already exists"}
+    if name in [ns.metadata.name for ns in v1.list_namespace().items]:
+        return {"status": "name already exists"}
     app = App()
     MyChart(app, name, replication)
     app.synth()
-    api = client.ApiClient()
-    utils.create_from_yaml(api, yaml_file=f"dist/{name}.k8s.yaml")
+    os.system(f"kubectl apply dist/{name}.k8s.yaml")
     return {"status": "ok"}
 
 @app.delete("/storage", description="delete a storage")
@@ -56,7 +65,7 @@ def create_storage(id) -> dict[str, str]:
     MyChart(scope=app, ns=name, replica_count=1)
     app.synth()
     api = client.ApiClient()
-    utils.(api, yaml_file=f"dist/{name}.k8s.yaml")
+    os.system(f'kubectl delete -f dist/{name}.k8s.yaml')
     return {"status": "ok"}
 
 if __name__ == "__main__":

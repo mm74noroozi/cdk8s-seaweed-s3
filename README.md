@@ -12,3 +12,4 @@ cdk8s operator using seaweed as s3
    kubectl apply -f dist/
 
 ========================================================================================================
+kubectl binary should be present in Docker image and also app should be running inside k8s network
