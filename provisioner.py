@@ -56,7 +56,7 @@ def create_storage(name: str, replication: int = 1) -> dict[str, str]:
     return {"status": "ok"}
 
 @app.delete("/storage", description="delete a storage")
-def create_storage(id) -> dict[str, str]:
+def delete_storage(id) -> dict[str, str]:
     ns_map ={ns.metadata.uid: ns.metadata.name for ns in v1.list_namespace() if "type" in ns.metadata.labels and ns.metadata.labels["type"] == "storage"} 
     if id not in ns_map:
         return {"status": "not found"}
